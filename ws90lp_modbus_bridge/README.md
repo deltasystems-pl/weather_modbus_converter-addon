@@ -36,6 +36,7 @@ https://github.com/deltasystems-pl/weather_modbus_converter-addon
 
 ```yaml
 protocol_mode: modbus_tcp_gateway
+live_read_mode: block
 host: 192.168.88.201
 port: 502
 unit_id: 144
