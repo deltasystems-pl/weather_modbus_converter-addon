@@ -20,6 +20,7 @@ WS90LP RS485 Modbus -> bridge add-on -> Home Assistant MQTT entities
 ```
 
 It polls the station through an RS485-to-Ethernet adapter, decodes live Modbus registers, calculates derived weather and rain values, publishes Home Assistant MQTT discovery/state, and can also send an ESPHome-compatible `data_string` payload to an external MQTT broker.
+It can also create a Home Assistant sidebar dashboard named **Pogoda** from an MQTT button entity.
 
 ## Why Use This Add-on
 
@@ -29,6 +30,7 @@ It polls the station through an RS485-to-Ethernet adapter, decodes live Modbus r
 - Publishes Home Assistant MQTT discovery for automatic entity creation.
 - Publishes external MQTT as `json`, `data_string`, or `ecowitt`.
 - Calculates sea-level pressure, wind direction text, solar radiation, feels-like values, and rain periods.
+- Adds an **Install Dashboard** button that creates a built-in-card Home Assistant dashboard.
 
 ## Install
 
@@ -79,6 +81,13 @@ external_mqtt:
   payload_format: data_string
   interval_seconds: 60
   retain: false
+
+dashboard:
+  config_dir: /homeassistant
+  title: Pogoda
+  icon: mdi:weather-partly-cloudy
+  url_path: pogoda-ws90lp
+  show_in_sidebar: true
 ```
 
 If the adapter cannot handle the 10-register block read, change only:
@@ -86,6 +95,12 @@ If the adapter cannot handle the 10-register block read, change only:
 ```yaml
 live_read_mode: single
 ```
+
+## Dashboard
+
+After the WS90LP MQTT device appears in Home Assistant, press **Install Dashboard** on the device page. The add-on writes `/homeassistant/dashboards/ws90lp-weather.yaml`, updates `configuration.yaml` with a YAML dashboard entry, and reports the result in **Dashboard Setup Status**.
+
+The generated dashboard uses only built-in Home Assistant cards, so no HACS resources are required. Restart Home Assistant if the `Pogoda` sidebar entry does not appear immediately.
 
 ## Documentation
 

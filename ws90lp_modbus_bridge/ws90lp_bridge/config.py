@@ -39,6 +39,15 @@ class ExternalMqttConfig:
 
 
 @dataclass
+class DashboardConfig:
+    config_dir: str = "/config"
+    title: str = "Pogoda"
+    icon: str = "mdi:weather-partly-cloudy"
+    url_path: str = "pogoda-ws90lp"
+    show_in_sidebar: bool = True
+
+
+@dataclass
 class WebhookConfig:
     url: str
     format: str = "json"
@@ -86,6 +95,7 @@ class BridgeConfig:
     station_elevation_m: float = 188.0
     mqtt: MqttConfig = field(default_factory=MqttConfig)
     external_mqtt: ExternalMqttConfig = field(default_factory=ExternalMqttConfig)
+    dashboard: DashboardConfig = field(default_factory=DashboardConfig)
     webhooks: list[WebhookConfig] = field(default_factory=list)
     ecowitt: EcowittConfig = field(default_factory=EcowittConfig)
     scheduled_reads: list[ScheduledReadConfig] = field(default_factory=list)
@@ -116,6 +126,7 @@ def _defaults() -> dict[str, Any]:
         "station_elevation_m": cfg.station_elevation_m,
         "mqtt": MqttConfig().__dict__,
         "external_mqtt": ExternalMqttConfig().__dict__,
+        "dashboard": DashboardConfig().__dict__,
         "webhooks": [],
         "ecowitt": EcowittConfig().__dict__,
         "scheduled_reads": [],
@@ -137,6 +148,7 @@ def load_config(path: str | Path | None = None, overrides: dict[str, Any] | None
 def parse_config(data: dict[str, Any]) -> BridgeConfig:
     mqtt = MqttConfig(**(data.get("mqtt") or {}))
     external_mqtt = _parse_external_mqtt(data.get("external_mqtt") or {})
+    dashboard = _parse_dashboard(data.get("dashboard") or {})
     webhooks = [WebhookConfig(**item) for item in (data.get("webhooks") or []) if item.get("url")]
     ecowitt = EcowittConfig(**(data.get("ecowitt") or {}))
     scheduled_reads = [_parse_scheduled_read(item, mqtt) for item in (data.get("scheduled_reads") or [])]
@@ -161,6 +173,7 @@ def parse_config(data: dict[str, Any]) -> BridgeConfig:
         station_elevation_m=float(data.get("station_elevation_m", 188.0)),
         mqtt=mqtt,
         external_mqtt=external_mqtt,
+        dashboard=dashboard,
         webhooks=webhooks,
         ecowitt=ecowitt,
         scheduled_reads=scheduled_reads,
@@ -188,6 +201,31 @@ def _parse_external_mqtt(data: dict[str, Any]) -> ExternalMqttConfig:
         if config.interval_seconds <= 0:
             raise ValueError("external_mqtt.interval_seconds must be greater than 0")
     return config
+
+
+def _parse_dashboard(data: dict[str, Any]) -> DashboardConfig:
+    if not isinstance(data, dict):
+        raise ValueError("dashboard must be a mapping")
+    config = DashboardConfig(**data)
+    config.config_dir = str(config.config_dir or "/config").strip() or "/config"
+    config.title = str(config.title or "Pogoda").strip() or "Pogoda"
+    config.icon = str(config.icon or "mdi:weather-partly-cloudy").strip() or "mdi:weather-partly-cloudy"
+    config.url_path = _dashboard_url_path(config.url_path)
+    config.show_in_sidebar = bool(config.show_in_sidebar)
+    return config
+
+
+def _dashboard_url_path(value: str) -> str:
+    cleaned = "".join(
+        char.lower() if char.isalnum() else "-"
+        for char in str(value or "pogoda-ws90lp").strip()
+    )
+    cleaned = "-".join(part for part in cleaned.split("-") if part)
+    if not cleaned:
+        cleaned = "pogoda-ws90lp"
+    if cleaned != "lovelace" and "-" not in cleaned:
+        cleaned = f"{cleaned}-ws90lp"
+    return cleaned
 
 
 def _parse_scheduled_read(data: dict[str, Any], mqtt: MqttConfig) -> ScheduledReadConfig:

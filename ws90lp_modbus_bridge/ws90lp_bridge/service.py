@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import signal
 import time
 from typing import Any, Protocol
 
 from .config import BridgeConfig, ExternalMqttConfig, MqttConfig, ScheduledOutputConfig, ScheduledReadConfig
+from .dashboard import install_dashboard
 from .ecowitt import ecowitt_form_body
 from .decode import decode_registers, with_rain_delta
 from .modbus import Ws90ModbusClient
@@ -63,6 +65,8 @@ class BridgeService:
         self.mqtt.connect()
         self.mqtt.publish_discovery()
         self.mqtt.publish_availability(True)
+        self.mqtt.publish_dashboard_status("Ready")
+        self.mqtt.subscribe_dashboard_commands(self.install_dashboard)
         self.connect_external_mqtt()
         try:
             while self.running:
@@ -180,6 +184,27 @@ class BridgeService:
             self.mqtt.publish_error(message)
         except Exception:
             LOG.exception("Could not publish optional output failure to MQTT")
+
+    def install_dashboard(self) -> None:
+        LOG.info("Dashboard install requested")
+        try:
+            self.mqtt.publish_dashboard_status("Installing dashboard...")
+            result = install_dashboard(
+                self.config.dashboard,
+                supervisor_token=os.environ.get("SUPERVISOR_TOKEN"),
+            )
+        except Exception as exc:
+            LOG.exception("Dashboard install failed")
+            self.mqtt.publish_dashboard_status(f"Dashboard install failed: {exc}")
+            self.mqtt.publish_error(f"Dashboard install failed: {exc}")
+            return
+
+        if result.ok:
+            self.mqtt.publish_dashboard_status(result.message)
+            LOG.info(result.message)
+            return
+        self.mqtt.publish_dashboard_status(result.message)
+        self.mqtt.publish_error(result.message)
 
 
 def scheduled_payload(state: dict[str, Any], schedule: ScheduledReadConfig) -> dict[str, Any]:

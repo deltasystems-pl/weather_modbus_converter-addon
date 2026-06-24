@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3
+
+- Added a Home Assistant MQTT button entity named **Install Dashboard**.
+- Added automatic YAML dashboard generation using built-in Home Assistant cards.
+- Added configurable dashboard options: title, icon, URL path, and sidebar visibility.
+- Defaults the generated sidebar dashboard title to **Pogoda**.
+- Added a diagnostic setup-status sensor for dashboard installation feedback.
+
 ## 0.1.2
 
 - Added Home Assistant add-on `icon.png` and `logo.png`.
