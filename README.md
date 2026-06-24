@@ -1,4 +1,6 @@
-# WS90LP Modbus Bridge Add-on
+# WS90LP Modbus Bridge Add-on Repository
+
+![WS90LP Bridge logo](ws90lp_modbus_bridge/logo.png)
 
 [![Open your Home Assistant instance and show the add-on store with this repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_store.svg)](https://my.home-assistant.io/redirect/supervisor_store/?repository_url=https%3A%2F%2Fgithub.com%2Fdeltasystems-pl%2Fweather_modbus_converter-addon)
 
@@ -8,7 +10,7 @@ Home Assistant add-on repository URL:
 https://github.com/deltasystems-pl/weather_modbus_converter-addon
 ```
 
-This repository contains the **WS90LP Modbus Bridge** Home Assistant add-on.
+This repository contains **WS90LP Modbus Bridge**, a Home Assistant add-on for wired WS90LP/WN90LP weather stations.
 
 The add-on runs one supervised service that owns the full path:
 
@@ -17,7 +19,16 @@ WS90LP RS485 Modbus -> bridge add-on -> Home Assistant MQTT entities
                                   -> optional external MQTT payload
 ```
 
-It polls a WS90LP/WN90LP weather station through an RS485-to-Ethernet adapter, decodes live Modbus registers, calculates derived weather/rain values, publishes Home Assistant MQTT discovery/state, and can also send an ESPHome-compatible `data_string` payload to an external MQTT broker.
+It polls the station through an RS485-to-Ethernet adapter, decodes live Modbus registers, calculates derived weather and rain values, publishes Home Assistant MQTT discovery/state, and can also send an ESPHome-compatible `data_string` payload to an external MQTT broker.
+
+## Why Use This Add-on
+
+- One service owns Modbus polling, derived values, Home Assistant updates, and external MQTT output.
+- No AppDaemon, Node-RED, template sensors, and second poller chain required.
+- Designed for the Waveshare RS485 TO ETH (B) using `modbus_tcp_gateway`.
+- Publishes Home Assistant MQTT discovery for automatic entity creation.
+- Publishes external MQTT as `json`, `data_string`, or `ecowitt`.
+- Calculates sea-level pressure, wind direction text, solar radiation, feels-like values, and rain periods.
 
 ## Install
 
@@ -32,7 +43,9 @@ https://github.com/deltasystems-pl/weather_modbus_converter-addon
 
 5. Install **WS90LP Modbus Bridge**.
 
-## Example Configuration
+## Recommended Configuration
+
+For the Waveshare RS485 TO ETH (B):
 
 ```yaml
 protocol_mode: modbus_tcp_gateway
@@ -68,4 +81,15 @@ external_mqtt:
   retain: false
 ```
 
-For the Waveshare RS485 TO ETH (B), use `protocol_mode: modbus_tcp_gateway`.
+If the adapter cannot handle the 10-register block read, change only:
+
+```yaml
+live_read_mode: single
+```
+
+## Documentation
+
+See the add-on documentation page after installation, or read:
+
+- [Full add-on documentation](ws90lp_modbus_bridge/DOCS.md)
+- [Changelog](ws90lp_modbus_bridge/CHANGELOG.md)

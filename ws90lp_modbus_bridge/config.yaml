@@ -1,5 +1,5 @@
 name: WS90LP Modbus Bridge
-version: "0.1.1"
+version: "0.1.2"
 slug: ws90lp_modbus_bridge
 description: Poll a WS90LP weather station over Modbus and publish Home Assistant MQTT plus external MQTT payloads.
 url: https://github.com/deltasystems-pl/weather_modbus_converter-addon/tree/main/ws90lp_modbus_bridge
