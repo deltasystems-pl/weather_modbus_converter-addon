@@ -1,0 +1,98 @@
+name: WS90LP Modbus Bridge
+version: "0.1.0"
+slug: ws90lp_modbus_bridge
+description: Poll a WS90LP weather station over Modbus and publish Home Assistant MQTT plus external MQTT payloads.
+url: https://github.com/deltasystems-pl/weather_modbus_converter-addon/tree/main/ws90lp_modbus_bridge
+arch:
+  - aarch64
+  - amd64
+  - armv7
+startup: services
+boot: auto
+init: false
+services:
+  - mqtt:need
+options:
+  protocol_mode: rtu_over_tcp
+  host: ""
+  port: 502
+  unit_id: 144
+  poll_interval_seconds: 10
+  timeout_seconds: 3
+  failure_threshold: 3
+  log_level: INFO
+  mqtt:
+    host: core-mosquitto
+    port: 1883
+    username: ""
+    password: ""
+    discovery_prefix: homeassistant
+    base_topic: ws90lp_bridge/ws90lp
+    client_id: ws90lp_bridge
+  external_mqtt:
+    enabled: false
+    host: ""
+    port: 1883
+    username: ""
+    password: ""
+    client_id: ws90lp_bridge_external
+    topic: okrweather/ws90-gw2000a-02
+    payload_format: data_string
+    interval_seconds: 60
+    retain: false
+  webhooks: []
+  scheduled_reads: []
+  ecowitt:
+    PASSKEY: ""
+    stationtype: WS90LP_Modbus_Bridge
+    model: WS90LP
+schema:
+  protocol_mode: list(rtu_over_tcp|modbus_tcp_gateway)
+  host: str
+  port: port
+  unit_id: int
+  poll_interval_seconds: float
+  timeout_seconds: float
+  failure_threshold: int
+  log_level: list(DEBUG|INFO|WARNING|ERROR)
+  mqtt:
+    host: str
+    port: port
+    username: str?
+    password: password?
+    discovery_prefix: str
+    base_topic: str
+    client_id: str
+  external_mqtt:
+    enabled: bool
+    host: str
+    port: port
+    username: str?
+    password: password?
+    client_id: str
+    topic: str
+    payload_format: list(json|data_string|ecowitt)
+    interval_seconds: float
+    retain: bool
+  webhooks:
+    - url: url
+      format: list(json|form|ecowitt)
+      timeout_seconds: float
+      retries: int
+  scheduled_reads:
+    - name: str
+      interval_seconds: float
+      fields:
+        - str
+      outputs:
+        - type: list(mqtt|webhook)
+          mqtt_topic: str?
+          retain: bool?
+          url: url?
+          format: list(json|form|ecowitt)?
+          timeout_seconds: float?
+          retries: int?
+  ecowitt:
+    PASSKEY: password?
+    stationtype: str
+    model: str

@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ws90lp-bridge"
+version = "0.1.0"
+description = "WS90LP Modbus bridge for Home Assistant MQTT discovery, CLI, and Node-RED."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "paho-mqtt>=2.0",
+  "pymodbus>=3.8",
+  "PyYAML>=6.0",
+  "requests>=2.31",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.0"]
+
+[project.scripts]
+ws90lp-bridge = "ws90lp_bridge.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["ws90lp_bridge*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
