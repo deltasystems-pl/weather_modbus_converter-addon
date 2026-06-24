@@ -11,6 +11,7 @@ from .decode import STATE_FIELDS
 ALLOWED_PROTOCOL_MODES = ("rtu_over_tcp", "modbus_tcp_gateway")
 ALLOWED_LIVE_READ_MODES = ("block", "single")
 ALLOWED_EXTERNAL_MQTT_FORMATS = ("json", "data_string", "ecowitt")
+ALLOWED_WEB_UI_LANGUAGES = ("en", "pl")
 
 
 @dataclass
@@ -44,6 +45,7 @@ class WebUiConfig:
     host: str = "0.0.0.0"
     port: int = 8099
     title: str = "Pogoda"
+    language: str = "pl"
     history_limit: int = 720
 
 
@@ -211,7 +213,11 @@ def _parse_web_ui(data: dict[str, Any]) -> WebUiConfig:
     config.host = str(config.host or "0.0.0.0").strip() or "0.0.0.0"
     config.port = int(config.port)
     config.title = str(config.title or "Pogoda").strip() or "Pogoda"
+    config.language = str(config.language or "pl").strip().lower()
     config.history_limit = int(config.history_limit)
+    if config.language not in ALLOWED_WEB_UI_LANGUAGES:
+        allowed = ", ".join(ALLOWED_WEB_UI_LANGUAGES)
+        raise ValueError(f"Unsupported web_ui.language {config.language!r}. Valid values: {allowed}")
     if config.port <= 0 or config.port > 65535:
         raise ValueError("web_ui.port must be between 1 and 65535")
     if config.history_limit < 10:

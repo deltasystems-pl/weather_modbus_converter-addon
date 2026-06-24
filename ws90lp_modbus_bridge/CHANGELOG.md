@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.5
+
+- Added `web_ui.language` with `pl` and `en` choices.
+- Added a fully Polish ingress page for the weather analysis app.
+- Added explicit `/pl` and `/en` language routes.
+- Translated dynamic condition labels for comfort, wind, rain, UV, radiation, and pressure levels.
+
 ## 0.1.4
 
 - Removed the automatic dashboard installer button from MQTT discovery.

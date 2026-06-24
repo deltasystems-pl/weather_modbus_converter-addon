@@ -111,10 +111,18 @@ web_ui:
   host: 0.0.0.0
   port: 8099
   title: Pogoda
+  language: pl
   history_limit: 720
 ```
 
 The Home Assistant add-on manifest uses `ingress_port: 8099`, so keep `web_ui.port` at `8099` unless you are running the bridge outside the add-on.
+
+Language:
+
+- `web_ui.language: pl` shows the Polish page by default.
+- `web_ui.language: en` shows the English page by default.
+- Add `/pl` to the ingress page URL to force Polish.
+- Add `/en` to the ingress page URL to force English.
 
 ## External MQTT Output
 
@@ -184,6 +192,7 @@ temperature_c=10.5,humidity_pct=55,pressure_hpa=1013.2,pressure_sea_level_hpa=10
 
 - Built-in Home Assistant ingress weather analysis page.
 - `title` controls the page title.
+- `language` controls the default page language. Use `pl` or `en`.
 - `history_limit` controls how many successful readings are kept in memory for trend charts.
 
 ## Troubleshooting
@@ -223,7 +232,7 @@ Check:
 
 Check:
 
-- The add-on is updated to version `0.1.4` or newer.
+- The add-on is updated to version `0.1.5` or newer.
 - The add-on is started.
 - **Show in sidebar** is enabled on the add-on info page.
 - `web_ui.enabled` is `true`.

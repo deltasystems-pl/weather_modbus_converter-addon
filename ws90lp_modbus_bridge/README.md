@@ -86,6 +86,7 @@ web_ui:
   host: 0.0.0.0
   port: 8099
   title: Pogoda
+  language: pl
   history_limit: 720
 ```
 
@@ -100,6 +101,8 @@ live_read_mode: single
 The add-on supports Home Assistant ingress. On the add-on **Info** page, enable **Show in sidebar** to add **Pogoda** to the Home Assistant sidebar.
 
 The page is served by the same supervised add-on process that polls Modbus. It visualizes live station data with current conditions, wind direction, rain periods, sun/UV, pressure, trend charts, and raw diagnostics. It does not write Lovelace YAML, does not modify `configuration.yaml`, and does not require HACS cards.
+
+Set `web_ui.language` to `pl` or `en`. The explicit `/pl` and `/en` routes are also available.
 
 ## Documentation
 
