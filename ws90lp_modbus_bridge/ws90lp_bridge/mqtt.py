@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Callable
+from typing import Any
 
 from .config import MqttConfig
 
@@ -54,8 +54,6 @@ class MqttPublisher:
         self.state_topic = f"{config.base_topic}/state"
         self.availability_topic = f"{config.base_topic}/status"
         self.error_topic = f"{config.base_topic}/error"
-        self.dashboard_command_topic = f"{config.base_topic}/dashboard/install/set"
-        self.dashboard_status_topic = f"{config.base_topic}/dashboard/status"
         try:
             import paho.mqtt.client as mqtt
         except ModuleNotFoundError as exc:
@@ -91,24 +89,10 @@ class MqttPublisher:
     def publish_error(self, message: str) -> None:
         self.client.publish(self.error_topic, message, retain=False)
 
-    def publish_dashboard_status(self, message: str) -> None:
-        self.client.publish(self.dashboard_status_topic, message, retain=True)
-
-    def subscribe_dashboard_commands(self, handler: Callable[[], None]) -> None:
-        def on_message(_client: Any, _userdata: Any, message: Any) -> None:
-            payload = message.payload.decode("utf-8", errors="replace").strip().lower()
-            if payload in {"", "press", "install"}:
-                handler()
-
-        self.client.message_callback_add(self.dashboard_command_topic, on_message)
-        self.client.subscribe(self.dashboard_command_topic)
-
 
 def discovery_payload(config: MqttConfig) -> dict[str, Any]:
     availability_topic = f"{config.base_topic}/status"
     state_topic = f"{config.base_topic}/state"
-    dashboard_command_topic = f"{config.base_topic}/dashboard/install/set"
-    dashboard_status_topic = f"{config.base_topic}/dashboard/status"
     components: dict[str, Any] = {}
     for field, (object_suffix, name, device_class, unit) in DISCOVERY_FIELDS.items():
         sensor: dict[str, Any] = {
@@ -140,26 +124,6 @@ def discovery_payload(config: MqttConfig) -> dict[str, Any]:
         if device_class:
             binary_sensor["device_class"] = device_class
         components[object_suffix] = binary_sensor
-    components["install_dashboard"] = {
-        "p": "button",
-        "unique_id": "ws90lp_bridge_install_dashboard",
-        "object_id": "ws90lp_install_dashboard",
-        "name": "Install Dashboard",
-        "command_topic": dashboard_command_topic,
-        "availability_topic": availability_topic,
-        "payload_press": "install",
-        "icon": "mdi:view-dashboard-plus",
-    }
-    components["dashboard_setup_status"] = {
-        "p": "sensor",
-        "unique_id": "ws90lp_bridge_dashboard_setup_status",
-        "object_id": "ws90lp_dashboard_setup_status",
-        "name": "Dashboard Setup Status",
-        "state_topic": dashboard_status_topic,
-        "availability_topic": availability_topic,
-        "icon": "mdi:view-dashboard",
-        "entity_category": "diagnostic",
-    }
     return {
         "dev": {
             "ids": ["ws90lp_bridge"],

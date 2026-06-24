@@ -2,19 +2,18 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import signal
 import time
 from typing import Any, Protocol
 
 from .config import BridgeConfig, ExternalMqttConfig, MqttConfig, ScheduledOutputConfig, ScheduledReadConfig
-from .dashboard import install_dashboard
 from .ecowitt import ecowitt_form_body
 from .decode import decode_registers, with_rain_delta
 from .modbus import Ws90ModbusClient
 from .mqtt import MqttPublisher
 from .payloads import external_mqtt_payload
 from .rain import RainAccumulator
+from .web_ui import WeatherDashboardServer, WeatherUiStore
 from .webhooks import form_payload, post_payload, post_webhook
 
 LOG = logging.getLogger(__name__)
@@ -54,6 +53,8 @@ class BridgeService:
         self.previous_state: dict[str, Any] | None = None
         self.next_scheduled_publish = {schedule.name: 0.0 for schedule in config.scheduled_reads}
         self.next_external_mqtt_publish = 0.0
+        self.ui_store = WeatherUiStore(config.web_ui.title, config.web_ui.history_limit)
+        self.web_ui = WeatherDashboardServer(config.web_ui, self.ui_store) if config.web_ui.enabled else None
         self.running = True
 
     def stop(self, *_args: object) -> None:
@@ -62,11 +63,10 @@ class BridgeService:
     def run(self) -> None:
         signal.signal(signal.SIGTERM, self.stop)
         signal.signal(signal.SIGINT, self.stop)
+        self.start_web_ui()
         self.mqtt.connect()
         self.mqtt.publish_discovery()
         self.mqtt.publish_availability(True)
-        self.mqtt.publish_dashboard_status("Ready")
-        self.mqtt.subscribe_dashboard_commands(self.install_dashboard)
         self.connect_external_mqtt()
         try:
             while self.running:
@@ -78,6 +78,7 @@ class BridgeService:
                 else:
                     self.previous_state = state
                     self.failure_count = 0
+                    self.ui_store.update_state(state)
                     self.mqtt.publish_availability(True)
                     self.mqtt.publish_state(state)
                     self.publish_optional_outputs(state)
@@ -85,16 +86,35 @@ class BridgeService:
                 time.sleep(max(0.1, self.config.poll_interval_seconds - elapsed))
         finally:
             self.mqtt.publish_availability(False)
+            self.ui_store.set_online(False)
             self.close_external_mqtt()
+            self.stop_web_ui()
             self.mqtt.close()
 
     def handle_poll_failure(self, exc: Exception) -> None:
         self.failure_count += 1
         LOG.exception("Polling failed")
+        self.ui_store.record_failure(str(exc))
         self.mqtt.publish_error(str(exc))
         if self.failure_count >= self.config.failure_threshold:
             self.mqtt.publish_availability(False)
             self.mqtt.publish_state({"modbus_ok": False, "error": str(exc)})
+
+    def start_web_ui(self) -> None:
+        if self.web_ui is None:
+            return
+        try:
+            self.web_ui.start()
+        except Exception as exc:
+            self.report_optional_output_failure("web_ui.start", exc)
+
+    def stop_web_ui(self) -> None:
+        if self.web_ui is None:
+            return
+        try:
+            self.web_ui.stop()
+        except Exception:
+            LOG.exception("Could not stop web UI")
 
     def publish_optional_outputs(self, state: dict[str, Any]) -> None:
         now = time.monotonic()
@@ -184,27 +204,6 @@ class BridgeService:
             self.mqtt.publish_error(message)
         except Exception:
             LOG.exception("Could not publish optional output failure to MQTT")
-
-    def install_dashboard(self) -> None:
-        LOG.info("Dashboard install requested")
-        try:
-            self.mqtt.publish_dashboard_status("Installing dashboard...")
-            result = install_dashboard(
-                self.config.dashboard,
-                supervisor_token=os.environ.get("SUPERVISOR_TOKEN"),
-            )
-        except Exception as exc:
-            LOG.exception("Dashboard install failed")
-            self.mqtt.publish_dashboard_status(f"Dashboard install failed: {exc}")
-            self.mqtt.publish_error(f"Dashboard install failed: {exc}")
-            return
-
-        if result.ok:
-            self.mqtt.publish_dashboard_status(result.message)
-            LOG.info(result.message)
-            return
-        self.mqtt.publish_dashboard_status(result.message)
-        self.mqtt.publish_error(result.message)
 
 
 def scheduled_payload(state: dict[str, Any], schedule: ScheduledReadConfig) -> dict[str, Any]:

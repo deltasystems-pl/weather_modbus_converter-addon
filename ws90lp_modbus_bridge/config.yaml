@@ -1,5 +1,5 @@
 name: WS90LP Modbus Bridge
-version: "0.1.3"
+version: "0.1.4"
 slug: ws90lp_modbus_bridge
 description: Poll a WS90LP weather station over Modbus and publish Home Assistant MQTT plus external MQTT payloads.
 url: https://github.com/deltasystems-pl/weather_modbus_converter-addon/tree/main/ws90lp_modbus_bridge
@@ -10,9 +10,10 @@ arch:
 startup: services
 boot: auto
 init: false
-homeassistant_api: true
-map:
-  - homeassistant_config:rw
+ingress: true
+ingress_port: 8099
+panel_icon: mdi:weather-partly-cloudy
+panel_title: Pogoda
 services:
   - mqtt:need
 options:
@@ -44,12 +45,12 @@ options:
     payload_format: data_string
     interval_seconds: 60
     retain: false
-  dashboard:
-    config_dir: /homeassistant
+  web_ui:
+    enabled: true
+    host: 0.0.0.0
+    port: 8099
     title: Pogoda
-    icon: mdi:weather-partly-cloudy
-    url_path: pogoda-ws90lp
-    show_in_sidebar: true
+    history_limit: 720
   webhooks: []
   scheduled_reads: []
   ecowitt:
@@ -85,12 +86,12 @@ schema:
     payload_format: list(json|data_string|ecowitt)
     interval_seconds: float
     retain: bool
-  dashboard:
-    config_dir: str
+  web_ui:
+    enabled: bool
+    host: str
+    port: port
     title: str
-    icon: str
-    url_path: str
-    show_in_sidebar: bool
+    history_limit: int
   webhooks:
     - url: url
       format: list(json|form|ecowitt)

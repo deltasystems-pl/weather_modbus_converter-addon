@@ -6,7 +6,7 @@ WS90LP Modbus Bridge is a Home Assistant add-on for WS90LP/WN90LP wired weather 
 
 It can also publish the same weather snapshot to an external MQTT broker in `json`, `data_string`, or `ecowitt` format.
 
-The add-on also exposes a Home Assistant MQTT button named **Install Dashboard**. Pressing it creates a YAML dashboard with built-in Home Assistant cards and can show it in the Home Assistant sidebar as **Pogoda** by default.
+The add-on includes a Home Assistant ingress page titled **Pogoda**. Enable **Show in sidebar** on the add-on info page to open a dedicated weather analysis app without installing Lovelace resources.
 
 ## Data Flow
 
@@ -15,6 +15,7 @@ WS90LP station
   -> RS485-to-Ethernet adapter
   -> WS90LP Modbus Bridge add-on
   -> Home Assistant MQTT discovery/state
+  -> Home Assistant sidebar app
   -> optional external MQTT broker
 ```
 
@@ -77,48 +78,43 @@ Expected entities include:
 - Rain Year
 - Rain State
 - Rain Level
-- Install Dashboard
-- Dashboard Setup Status
 
-## Automatic Dashboard
+## Sidebar Weather App
 
-The add-on can create a Home Assistant YAML dashboard for the weather station. It uses only built-in cards, so there are no HACS cards or frontend resources to install.
+The add-on supports Home Assistant ingress, similar to Node-RED.
 
-Default dashboard behavior:
+To enable it:
 
-- Sidebar title: `Pogoda`
-- Dashboard URL path: `pogoda-ws90lp`
-- Icon: `mdi:weather-partly-cloudy`
-- Dashboard YAML file: `/homeassistant/dashboards/ws90lp-weather.yaml`
+1. Open **Settings -> Add-ons**.
+2. Open **WS90LP Modbus Bridge**.
+3. Open the **Info** tab.
+4. Enable **Show in sidebar**.
+5. Open **Pogoda** from the Home Assistant sidebar.
 
-To install or refresh the dashboard:
+The app is served by the same add-on process that polls Modbus and publishes MQTT. It does not write `configuration.yaml`, does not install dashboard YAML, and does not require HACS cards.
 
-1. Start the add-on and wait for the WS90LP MQTT device to appear.
-2. Open the WS90LP Weather Station device in Home Assistant.
-3. Press **Install Dashboard**.
-4. Check **Dashboard Setup Status** for the result.
-5. Restart Home Assistant if the sidebar entry does not appear immediately.
+The page visualizes:
 
-The installer writes a backup before changing `configuration.yaml`:
+- current station readings and derived comfort values
+- wind direction, speed, gust, and wind level
+- rain state, rain rate, event/hour/day/week/month/year totals
+- sun, UV, illuminance, solar radiation, and sun-adjusted feels-like temperature
+- station pressure, sea-level pressure, and pressure trend
+- rolling in-memory charts from recent successful reads
+- raw decoded bridge state for troubleshooting
 
-```text
-/homeassistant/configuration.yaml.ws90lp-backup-YYYYMMDD-HHMMSS
-```
-
-Dashboard options:
+Configuration:
 
 ```yaml
-dashboard:
-  config_dir: /homeassistant
+web_ui:
+  enabled: true
+  host: 0.0.0.0
+  port: 8099
   title: Pogoda
-  icon: mdi:weather-partly-cloudy
-  url_path: pogoda-ws90lp
-  show_in_sidebar: true
+  history_limit: 720
 ```
 
-`title` controls the Home Assistant sidebar label. `url_path` is the internal dashboard key and should contain a hyphen, for example `pogoda-ws90lp` or `weather-station`.
-
-If your existing `lovelace:` YAML uses `!include` for the dashboard map, the add-on writes the dashboard file but reports that `configuration.yaml` needs a manual Lovelace merge. This avoids corrupting a custom Lovelace setup.
+The Home Assistant add-on manifest uses `ingress_port: 8099`, so keep `web_ui.port` at `8099` unless you are running the bridge outside the add-on.
 
 ## External MQTT Output
 
@@ -184,13 +180,11 @@ temperature_c=10.5,humidity_pct=55,pressure_hpa=1013.2,pressure_sea_level_hpa=10
 - Optional second MQTT output for another system.
 - Uses its own broker host, credentials, topic, payload format, and interval.
 
-`dashboard`
+`web_ui`
 
-- Controls the generated Home Assistant dashboard.
-- `title` is the sidebar/menu label.
-- `icon` is the sidebar icon.
-- `url_path` is the internal Lovelace dashboard key.
-- `show_in_sidebar` controls whether Home Assistant shows the dashboard in the sidebar.
+- Built-in Home Assistant ingress weather analysis page.
+- `title` controls the page title.
+- `history_limit` controls how many successful readings are kept in memory for trend charts.
 
 ## Troubleshooting
 
@@ -225,14 +219,15 @@ Check:
 - Topic matches the consumer expectation.
 - `payload_format` matches the consumer parser.
 
-### Install Dashboard button does not create a sidebar entry
+### Pogoda sidebar page does not appear
 
 Check:
 
-- The add-on is updated to version `0.1.3` or newer.
-- `Dashboard Setup Status` says the dashboard was installed.
-- Home Assistant was restarted after the button was pressed.
-- Your `configuration.yaml` does not use an included `lovelace.dashboards` map that needs manual merging.
+- The add-on is updated to version `0.1.4` or newer.
+- The add-on is started.
+- **Show in sidebar** is enabled on the add-on info page.
+- `web_ui.enabled` is `true`.
+- `web_ui.port` is still `8099`.
 
 ### Rain values reset after first start
 

@@ -1,12 +1,12 @@
 # Changelog
 
-## 0.1.3
+## 0.1.4
 
-- Added a Home Assistant MQTT button entity named **Install Dashboard**.
-- Added automatic YAML dashboard generation using built-in Home Assistant cards.
-- Added configurable dashboard options: title, icon, URL path, and sidebar visibility.
-- Defaults the generated sidebar dashboard title to **Pogoda**.
-- Added a diagnostic setup-status sensor for dashboard installation feedback.
+- Removed the automatic dashboard installer button from MQTT discovery.
+- Removed dashboard setup status reporting and generated dashboard configuration.
+- Removed Home Assistant Core API and configuration-directory write permissions from the add-on.
+- Added a Home Assistant ingress app with `panel_title: Pogoda` and `panel_icon: mdi:weather-partly-cloudy`.
+- Added a built-in weather analysis page for current conditions, wind, rain, sun/UV, pressure, trend charts, and raw diagnostics.
 
 ## 0.1.2
 
